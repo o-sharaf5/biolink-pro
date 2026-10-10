@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventType {
+  PAGE_VIEW
+  LINK_CLICK
+}
+
+model User {
+  id              String   @id @default(cuid())
+  clerkId         String   @unique
+  email           String   @unique
+  username        String?  @unique
+  name            String?
+  avatarUrl       String?
+  bio             String?  @db.VarChar(160)
+  themeSettings   Json     @default("{}")
+  tipEnabled      Boolean  @default(false)
+  stripeAccountId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  links        Link[]
+  events       AnalyticsEvent[]
+  transactions Transaction[]
+}
+
+model Link {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String   @db.VarChar(80)
+  url         String
+  icon        String?
+  position    Int      @default(0)
+  isActive    Boolean  @default(true)
+  clicksCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events AnalyticsEvent[]
+
+  @@index([userId, position])
+}
+
+model AnalyticsEvent {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkId    String?
+  link      Link?     @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  type      EventType @default(PAGE_VIEW)
+  referrer  String?
+  userAgent String?
+  country   String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([linkId, createdAt])
+}
+
+model Transaction {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  donorName           String?
+  message             String?
+  amount              Int
+  currency            String   @default("USD")
+  stripePaymentIntentId String?
+  stripeSessionId     String?  @unique
+  status              String   @default("succeeded")
+  createdAt           DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
