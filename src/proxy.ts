@@ -8,32 +8,42 @@ const isPublicRoute = createRouteMatcher([
   "/api/track/(.*)",
   "/api/stripe/webhook",
   "/api/webhooks/clerk(.*)",
+  "/__clerk/(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
-  const { pathname } = request.nextUrl;
+export default clerkMiddleware(
+  async (auth, request) => {
+    const { pathname } = request.nextUrl;
 
-  const isBioPage =
-    !pathname.startsWith("/dashboard") &&
-    !pathname.startsWith("/api/") &&
-    !pathname.startsWith("/sign-in") &&
-    !pathname.startsWith("/sign-up") &&
-    /^\/[a-zA-Z0-9_-]{2,30}$/.test(pathname);
+    const isBioPage =
+      !pathname.startsWith("/dashboard") &&
+      !pathname.startsWith("/api/") &&
+      !pathname.startsWith("/sign-in") &&
+      !pathname.startsWith("/sign-up") &&
+      !pathname.startsWith("/__clerk") &&
+      /^\/[a-zA-Z0-9_-]{2,30}$/.test(pathname);
 
-  if (isPublicRoute(request) || isBioPage) {
+    if (isPublicRoute(request) || isBioPage) {
+      return NextResponse.next();
+    }
+
+    const { userId } = await auth();
+    if (!userId) {
+      const url = new URL("/sign-in", request.url);
+      url.searchParams.set("redirect_url", request.url);
+      return NextResponse.redirect(url, 307);
+    }
+
     return NextResponse.next();
-  }
-
-  const { userId } = await auth();
-  if (!userId) {
-    const url = new URL("/sign-in", request.url);
-    url.searchParams.set("redirect_url", request.url);
-    return NextResponse.redirect(url, 307);
-  }
-
-  return NextResponse.next();
-});
+  },
+  { frontendApiProxy: { enabled: true } }
+);
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    "/((?!.*\\..*|_next).*)",
+    "/",
+    "/(api|trpc)(.*)",
+    "/__clerk/(.*)",
+  ],
 };
