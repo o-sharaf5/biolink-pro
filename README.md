@@ -2,6 +2,8 @@
 
 **A link-in-bio SaaS** — Linktree-style profile pages with Stripe tips and first-party analytics. Sign up, claim a username, and your page is live at `/yourname`.
 
+**Live demo: https://biolink-pro-ten.vercel.app**
+
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue?style=flat-square) ![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=flat-square)
 
 ## Features
